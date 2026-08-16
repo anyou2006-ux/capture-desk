@@ -138,5 +138,10 @@ Windows / Linux 浏览器通常可使用对应的 `Ctrl` 组合键。
 - [index.html](./index.html)：软件主体，纯 HTML / CSS / JavaScript。
 - [start.command](./start.command)：macOS 一键启动脚本。
 - [README.md](./README.md)：本操作指南。
+- [LICENSE](./LICENSE)：MIT 开源许可证。
+
+## 七、许可证
+
+本项目采用 [MIT License](./LICENSE) 发布。你可以自由使用、复制、修改和分发本项目，但请保留许可证和版权声明。
 
 所有图片处理均在本机浏览器中进行，不上传图片。

@@ -1,0 +1,350 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f6f5f2">
+  <title>截一隅 · 本机截图工作台</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23272824'/%3E%3Ccircle cx='22' cy='10' r='4' fill='%23d95d3f'/%3E%3C/svg%3E">
+  <style>
+    :root {
+      --bg: #f4f3f0;
+      --surface: #fbfaf8;
+      --surface-strong: #ffffff;
+      --surface-soft: #eeece8;
+      --line: #dfddd8;
+      --line-strong: #ccc9c1;
+      --ink: #272824;
+      --muted: #85857e;
+      --muted-strong: #5e5f59;
+      --accent: #d95d3f;
+      --accent-soft: #f7ddd4;
+      --accent-deep: #a93f2b;
+      --green: #6d9d77;
+      --shadow: 0 20px 55px rgba(56, 51, 42, .08);
+      --radius: 14px;
+      --mono: "SFMono-Regular", "Cascadia Code", "Roboto Mono", monospace;
+      --sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "PingFang SC", "Hiragino Sans GB", "Helvetica Neue", sans-serif;
+    }
+    [data-theme="dark"] {
+      --bg: #222321;
+      --surface: #292a27;
+      --surface-strong: #30312d;
+      --surface-soft: #363732;
+      --line: #41423c;
+      --line-strong: #595a50;
+      --ink: #eeede8;
+      --muted: #a3a39b;
+      --muted-strong: #c5c4bc;
+      --accent: #e27458;
+      --accent-soft: #54352f;
+      --accent-deep: #f09175;
+      --green: #8fbd98;
+      --shadow: 0 20px 55px rgba(0, 0, 0, .22);
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; }
+    body { background: var(--bg); color: var(--ink); font-family: var(--sans); font-size: 14px; letter-spacing: .01em; }
+    button, input { font: inherit; }
+    button { border: 0; color: inherit; cursor: pointer; }
+    button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .app { min-height: 100vh; display: grid; grid-template-rows: 62px 1fr; }
+    .topbar { height: 62px; border-bottom: 1px solid var(--line); display: flex; align-items: center; padding: 0 22px; background: color-mix(in srgb, var(--surface) 92%, transparent); gap: 26px; }
+    .brand { display: flex; align-items: center; gap: 10px; min-width: 176px; }
+    .brand-mark { width: 25px; height: 25px; border: 2px solid var(--ink); border-radius: 7px 7px 7px 2px; position: relative; transform: rotate(-5deg); }
+    .brand-mark::after { content: ""; position: absolute; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); right: 3px; top: 3px; }
+    .brand strong { font-size: 16px; letter-spacing: .08em; }
+    .brand small { color: var(--muted); font-size: 10px; display: block; letter-spacing: .06em; margin-top: 2px; }
+    .topbar-center { flex: 1; display: flex; justify-content: center; color: var(--muted-strong); font-size: 12px; }
+    .system-pill { padding: 7px 11px; border: 1px solid var(--line); border-radius: 100px; display: flex; align-items: center; gap: 7px; background: var(--surface); }
+    .status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 3px color-mix(in srgb, var(--green) 18%, transparent); }
+    .top-actions { display: flex; align-items: center; gap: 7px; min-width: 176px; justify-content: flex-end; }
+    .icon-button, .quiet-button { width: 34px; height: 34px; border-radius: 9px; background: transparent; color: var(--muted-strong); display: inline-grid; place-items: center; transition: background .2s, transform .2s, color .2s; }
+    .icon-button:hover, .quiet-button:hover { background: var(--surface-soft); color: var(--ink); }
+    .icon-button:active, .quiet-button:active, .primary:active { transform: scale(.97); }
+    svg { display: block; }
+    .layout { display: grid; grid-template-columns: 208px minmax(0, 1fr); min-height: 0; }
+    .sidebar { border-right: 1px solid var(--line); padding: 20px 13px; background: var(--surface); display: flex; flex-direction: column; gap: 9px; }
+    .primary { width: 100%; background: var(--ink); color: var(--surface); border-radius: 10px; min-height: 43px; display: flex; align-items: center; justify-content: center; gap: 9px; font-weight: 650; letter-spacing: .02em; box-shadow: 0 8px 18px rgba(39,40,36,.12); transition: transform .2s, background .2s; }
+    .primary:hover { background: var(--accent); }
+    .sidebar-rule { height: 1px; background: var(--line); margin: 13px 8px 9px; }
+    .section-label { color: var(--muted); font-family: var(--mono); font-size: 10px; letter-spacing: .08em; padding: 0 10px 6px; text-transform: uppercase; }
+    .nav-item { min-height: 38px; border-radius: 9px; display: flex; align-items: center; gap: 11px; padding: 0 10px; color: var(--muted-strong); background: transparent; text-align: left; width: 100%; transition: background .2s, color .2s, transform .2s; }
+    .nav-item:hover { background: var(--surface-soft); color: var(--ink); }
+    .nav-item:active { transform: translateY(1px); }
+    .nav-item.active { background: var(--accent-soft); color: var(--accent-deep); font-weight: 650; }
+    .nav-item svg { flex: 0 0 auto; }
+    .sidebar-bottom { margin-top: auto; border-top: 1px solid var(--line); padding: 15px 9px 0; color: var(--muted); font-size: 11px; line-height: 1.6; }
+    .shortcut { color: var(--muted-strong); font-family: var(--mono); font-size: 10px; }
+    .workspace { min-width: 0; min-height: 0; display: flex; flex-direction: column; }
+    .workspace-head { height: 75px; display: flex; align-items: center; justify-content: space-between; padding: 0 27px; border-bottom: 1px solid var(--line); }
+    .eyebrow { color: var(--accent); font-family: var(--mono); font-size: 10px; letter-spacing: .08em; margin-bottom: 4px; }
+    h1, h2, p { margin: 0; }
+    h1 { font-size: 21px; letter-spacing: -.025em; font-weight: 680; }
+    .workspace-meta { color: var(--muted); font-size: 12px; display: flex; align-items: center; gap: 10px; }
+    .workspace-meta span { width: 3px; height: 3px; background: var(--line-strong); border-radius: 50%; }
+    .head-actions { display: flex; align-items: center; gap: 8px; }
+    .small-button { background: var(--surface-strong); border: 1px solid var(--line); border-radius: 8px; padding: 8px 11px; color: var(--muted-strong); display: flex; align-items: center; gap: 7px; transition: border .2s, background .2s, transform .2s; }
+    .small-button:hover { border-color: var(--line-strong); background: var(--surface); color: var(--ink); }
+    .small-button:active { transform: translateY(1px); }
+    .workspace-body { display: grid; grid-template-columns: minmax(0, 1fr) 275px; min-height: 0; flex: 1; }
+    .stage-column { min-width: 0; display: flex; flex-direction: column; padding: 17px 22px 20px 27px; }
+    .stage-tools { display: flex; justify-content: space-between; align-items: center; min-height: 35px; margin-bottom: 12px; }
+    .tool-group { display: flex; gap: 3px; align-items: center; }
+    .tool-button { width: 33px; height: 31px; display: grid; place-items: center; border-radius: 7px; background: transparent; color: var(--muted-strong); position: relative; }
+    .tool-button:hover { background: var(--surface-soft); color: var(--ink); }
+    .tool-button.active { background: var(--ink); color: var(--surface); }
+    .tool-button[disabled] { opacity: .4; cursor: not-allowed; }
+    .tool-separator { width: 1px; height: 19px; margin: 0 6px; background: var(--line); }
+    .zoom-group { display: flex; align-items: center; gap: 2px; color: var(--muted); font-family: var(--mono); font-size: 10px; }
+    .zoom-value { min-width: 41px; text-align: center; }
+    .stage-area { flex: 1; min-height: 370px; border: 1px solid var(--line); border-radius: 13px; background: var(--surface-soft); position: relative; overflow: auto; display: flex; align-items: center; justify-content: center; padding: 29px; background-image: radial-gradient(color-mix(in srgb, var(--line-strong) 40%, transparent) .7px, transparent .7px); background-size: 15px 15px; transition: border-color .2s, background-color .2s; }
+    .stage-area.dragging { border-color: var(--accent); background-color: var(--accent-soft); }
+    .canvas-shell { position: relative; display: flex; align-items: center; justify-content: center; min-width: 1px; min-height: 1px; max-width: 100%; max-height: 100%; }
+    #canvas { display: none; max-width: none; border-radius: 4px; box-shadow: var(--shadow); background: #fff; cursor: crosshair; }
+    .empty-state { width: min(370px, 90%); text-align: center; color: var(--muted-strong); }
+    .empty-icon { width: 64px; height: 64px; border: 1px solid var(--line-strong); background: var(--surface); margin: 0 auto 17px; border-radius: 18px 18px 18px 5px; display: grid; place-items: center; color: var(--accent); transform: rotate(-3deg); }
+    .empty-state h2 { font-size: 17px; color: var(--ink); margin-bottom: 8px; letter-spacing: -.02em; }
+    .empty-state p { line-height: 1.65; font-size: 12px; max-width: 280px; margin: 0 auto 17px; }
+    .empty-actions { display: flex; justify-content: center; gap: 7px; }
+    .outline-button { border: 1px solid var(--line-strong); background: var(--surface); color: var(--muted-strong); border-radius: 8px; padding: 8px 12px; transition: background .2s, transform .2s, border .2s; }
+    .outline-button:hover { background: var(--surface-strong); border-color: var(--accent); color: var(--accent-deep); }
+    .outline-button:active { transform: scale(.98); }
+    .selection-actions { position: absolute; display: none; z-index: 3; background: var(--ink); color: var(--surface); border-radius: 8px; padding: 4px; gap: 2px; box-shadow: var(--shadow); }
+    .selection-actions.show { display: flex; }
+    .selection-actions button { background: transparent; color: inherit; padding: 6px 8px; font-size: 11px; border-radius: 5px; }
+    .selection-actions button:hover { background: rgba(255,255,255,.14); }
+    .stage-foot { display: flex; justify-content: space-between; color: var(--muted); font-size: 11px; padding-top: 11px; }
+    .stage-foot strong { color: var(--muted-strong); font-weight: 550; }
+    .inspector { border-left: 1px solid var(--line); background: var(--surface); padding: 21px 17px; overflow: auto; }
+    .panel-section { padding-bottom: 20px; margin-bottom: 19px; border-bottom: 1px solid var(--line); }
+    .panel-section:last-child { border-bottom: 0; }
+    .panel-title { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+    .panel-title h2 { font-size: 12px; font-weight: 680; }
+    .panel-title span { font-size: 10px; color: var(--muted); font-family: var(--mono); }
+    .recent-list { display: flex; flex-direction: column; gap: 8px; }
+    .recent-item { display: grid; grid-template-columns: 55px 1fr auto; align-items: center; gap: 9px; padding: 7px; border: 1px solid transparent; border-radius: 9px; cursor: pointer; transition: background .2s, border .2s; }
+    .recent-item:hover { background: var(--surface-soft); border-color: var(--line); }
+    .recent-thumb { width: 55px; height: 39px; object-fit: cover; border-radius: 5px; background: var(--surface-soft); border: 1px solid var(--line); }
+    .recent-name { font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .recent-time { color: var(--muted); font-family: var(--mono); font-size: 9px; margin-top: 4px; }
+    .recent-arrow { color: var(--muted); }
+    .recent-empty { color: var(--muted); font-size: 11px; line-height: 1.55; padding: 6px 3px; }
+    .setting-row { min-height: 33px; display: flex; align-items: center; justify-content: space-between; color: var(--muted-strong); font-size: 11px; }
+    .setting-row + .setting-row { margin-top: 4px; }
+    .setting-value { color: var(--muted); font-family: var(--mono); font-size: 10px; }
+    .toggle { width: 28px; height: 17px; padding: 2px; border-radius: 20px; background: var(--line-strong); transition: background .2s; }
+    .toggle::after { content: ""; width: 13px; height: 13px; border-radius: 50%; background: var(--surface); display: block; transition: transform .2s; }
+    .toggle.on { background: var(--accent); }
+    .toggle.on::after { transform: translateX(11px); }
+    .tip { background: var(--accent-soft); border-radius: 9px; padding: 11px; font-size: 11px; line-height: 1.55; color: var(--accent-deep); }
+    .tip strong { display: block; font-size: 10px; letter-spacing: .06em; margin-bottom: 4px; }
+    .palette { display: flex; gap: 7px; }
+    .swatch { width: 23px; height: 23px; border-radius: 7px; border: 2px solid transparent; padding: 0; }
+    .swatch.active { border-color: var(--ink); outline: 2px solid var(--surface); outline-offset: -4px; }
+    .toast { position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 20px); background: var(--ink); color: var(--surface); padding: 10px 14px; border-radius: 8px; font-size: 12px; opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; z-index: 10; box-shadow: var(--shadow); }
+    .toast.show { opacity: 1; transform: translate(-50%, 0); }
+    .capture-note { position: fixed; top: 77px; left: 50%; transform: translateX(-50%); background: var(--ink); color: var(--surface); padding: 9px 14px; border-radius: 7px; font-size: 12px; opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 9; }
+    .capture-note.show { opacity: 1; }
+    @media (max-width: 900px) {
+      .workspace-body { grid-template-columns: 1fr; }
+      .inspector { border-left: 0; border-top: 1px solid var(--line); display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+      .panel-section { margin: 0; }
+      .tip { grid-column: 1 / -1; }
+    }
+    @media (max-width: 620px) {
+      .topbar { padding: 0 14px; gap: 8px; }
+      .brand { min-width: 0; }
+      .brand small, .topbar-center, .top-actions .quiet-button:first-child { display: none; }
+      .layout { grid-template-columns: 1fr; }
+      .sidebar { border-right: 0; border-bottom: 1px solid var(--line); padding: 10px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+      .sidebar .primary { grid-column: 1 / -1; }
+      .sidebar-rule, .section-label, .sidebar-bottom { display: none; }
+      .nav-item { justify-content: center; padding: 0 4px; font-size: 11px; }
+      .nav-item .nav-label { display: none; }
+      .workspace-head { padding: 0 14px; }
+      .workspace-meta { display: none; }
+      .stage-column { padding: 13px 12px; }
+      .stage-area { min-height: 300px; padding: 14px; }
+      .inspector { display: block; padding: 17px 14px; }
+      .panel-section { margin-bottom: 17px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app" id="app">
+    <header class="topbar">
+      <div class="brand" aria-label="截一隅">
+        <div class="brand-mark"></div>
+        <div><strong>截一隅</strong><small>LOCAL CAPTURE DESK</small></div>
+      </div>
+      <div class="topbar-center"><div class="system-pill"><i class="status-dot"></i><span>本机模式 · 不上传</span></div></div>
+      <div class="top-actions">
+        <button class="icon-button" id="themeToggle" aria-label="切换深色模式" title="切换深色模式"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M20.5 14.6A8.2 8.2 0 0 1 9.4 3.5 8.2 8.2 0 1 0 20.5 14.6Z"/></svg></button>
+        <button class="icon-button" id="helpButton" aria-label="快捷键说明" title="快捷键说明"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><path d="M9.7 9a2.35 2.35 0 1 1 3.7 1.92c-.83.57-1.4 1.08-1.4 2.08M12 16.5v.1"/></svg></button>
+      </div>
+    </header>
+    <div class="layout">
+      <aside class="sidebar">
+        <button class="primary" id="captureButton"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 8.5V6a2 2 0 0 1 2-2h2.5M15.5 4H18a2 2 0 0 1 2 2v2.5M20 15.5V18a2 2 0 0 1-2 2h-2.5M8.5 20H6a2 2 0 0 1-2-2v-2.5"/><path d="M8 12h8M12 8v8"/></svg>开始截图 <span class="shortcut">⌘⇧X</span></button>
+        <div class="sidebar-rule"></div>
+        <div class="section-label">工具箱</div>
+        <button class="nav-item active" id="importButton"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 3v12M7.5 10.5 12 15l4.5-4.5M5 20h14"/></svg><span class="nav-label">导入图片</span></button>
+        <button class="nav-item" id="pasteButton"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M9 5.2V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1.2M8 5h8a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z"/><path d="M9 11h6M9 15h4"/></svg><span class="nav-label">从剪贴板读取</span></button>
+        <div class="sidebar-rule"></div>
+        <div class="section-label">最近使用</div>
+        <button class="nav-item" id="clearHistory"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M5 7h14M10 11v5M14 11v5M8 7l.7-2h6.6l.7 2M7 7l.7 13h8.6L17 7"/></svg><span class="nav-label">清空记录</span></button>
+        <div class="sidebar-bottom">所有图片只在当前设备处理。<br>快捷键 <span class="shortcut">⌘⇧X</span> 可快速开始。</div>
+      </aside>
+      <main class="workspace">
+        <div class="workspace-head">
+          <div><div class="eyebrow">WORKSPACE / 01</div><h1>截图工作台</h1><div class="workspace-meta">框选、标注、复制 <span></span> 一步完成</div></div>
+          <div class="head-actions"><button class="small-button" id="copyButton" disabled><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="8" y="8" width="11" height="11" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>复制图片</button><button class="small-button" id="downloadButton" disabled><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 3v12M7.5 10.5 12 15l4.5-4.5M5 20h14"/></svg>保存 PNG</button></div>
+        </div>
+        <div class="workspace-body">
+          <section class="stage-column">
+            <div class="stage-tools">
+              <div class="tool-group" aria-label="标注工具">
+                <button class="tool-button active" data-tool="select" title="选择区域" aria-label="选择区域"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="m5 3 14 9-6 1.5L10.5 19 5 3Z"/></svg></button>
+                <button class="tool-button" data-tool="pen" title="画笔" aria-label="画笔"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="m4 16.5-.8 3.8 3.8-.8L19.8 6.7a2.12 2.12 0 0 0-3-3L4 16.5Z"/><path d="m14.8 5.7 3.5 3.5"/></svg></button>
+                <button class="tool-button" data-tool="rect" title="矩形标记" aria-label="矩形标记"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="4" y="5" width="16" height="14" rx="1.5"/></svg></button>
+                <button class="tool-button" data-tool="arrow" title="箭头" aria-label="箭头"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="m5 19 13-13M9 6h9v9"/></svg></button>
+                <button class="tool-button" data-tool="text" title="文字" aria-label="文字"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M5 5h14M12 5v14M8 19h8"/></svg></button>
+                <button class="tool-button" data-tool="blur" title="局部模糊" aria-label="局部模糊"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="7" cy="7" r="1"/><circle cx="12" cy="7" r="1"/><circle cx="17" cy="7" r="1"/><circle cx="7" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="17" cy="12" r="1"/><circle cx="7" cy="17" r="1"/><circle cx="12" cy="17" r="1"/><circle cx="17" cy="17" r="1"/></svg></button>
+                <span class="tool-separator"></span>
+                <button class="tool-button" id="undoButton" title="撤销" aria-label="撤销" disabled><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M9 8 5 12l4 4M5 12h8a6 6 0 0 1 6 6"/></svg></button>
+                <button class="tool-button" id="redoButton" title="重做" aria-label="重做" disabled><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="m15 8 4 4-4 4M19 12h-8a6 6 0 0 0-6 6"/></svg></button>
+              </div>
+              <div class="zoom-group"><button class="quiet-button" id="zoomOut" aria-label="缩小"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 12h14"/></svg></button><span class="zoom-value" id="zoomValue">适应</span><button class="quiet-button" id="zoomIn" aria-label="放大"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 5v14M5 12h14"/></svg></button><button class="quiet-button" id="zoomFit" aria-label="适应窗口" title="适应窗口"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M8 4H5a1 1 0 0 0-1 1v3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M4 16v3a1 1 0 0 0 1 1h3"/></svg></button></div>
+            </div>
+            <div class="stage-area" id="stageArea">
+              <div class="canvas-shell" id="canvasShell"><canvas id="canvas"></canvas><div class="empty-state" id="emptyState"><div class="empty-icon"><svg width="29" height="29" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 8.5V6a2 2 0 0 1 2-2h2.5M15.5 4H18a2 2 0 0 1 2 2v2.5M20 15.5V18a2 2 0 0 1-2 2h-2.5M8.5 20H6a2 2 0 0 1-2-2v-2.5"/><circle cx="12" cy="12" r="2.5"/></svg></div><h2>画布还很安静</h2><p>截取屏幕的一块区域，或把图片拖进来。所有处理都留在这台电脑上。</p><div class="empty-actions"><button class="outline-button" id="emptyCapture">开始截图</button><button class="outline-button" id="demoButton">查看示例</button></div></div></div>
+              <div class="selection-actions" id="selectionActions"><button id="cropButton">裁剪选区</button><button id="clearSelection">取消</button></div>
+            </div>
+            <div class="stage-foot"><span>当前工具：<strong id="toolName">选择区域</strong></span><span id="imageInfo">等待一张图片</span></div>
+          </section>
+          <aside class="inspector">
+            <section class="panel-section"><div class="panel-title"><h2>最近截图</h2><span id="recentCount">0 / 4</span></div><div class="recent-list" id="recentList"><div class="recent-empty">完成第一次截图后，缩略图会出现在这里。</div></div></section>
+            <section class="panel-section"><div class="panel-title"><h2>工作偏好</h2><span>LOCAL</span></div><div class="setting-row"><span>截图后自动复制</span><button class="toggle on" id="autoCopyToggle" aria-label="切换自动复制"></button></div><div class="setting-row"><span>标注颜色</span><div class="palette"><button class="swatch active" style="background:#d95d3f" data-color="#d95d3f" aria-label="珊瑚红"></button><button class="swatch" style="background:#3468a8" data-color="#3468a8" aria-label="深蓝"></button><button class="swatch" style="background:#3c8b68" data-color="#3c8b68" aria-label="森林绿"></button><button class="swatch" style="background:#e09b32" data-color="#e09b32" aria-label="琥珀黄"></button></div></div><div class="setting-row"><span>默认快捷键</span><span class="setting-value">⌘ ⇧ X</span></div></section>
+            <section class="panel-section"><div class="tip"><strong>小提示 / TIP</strong>选中画布上的一块区域后，可以直接裁剪。使用 <span class="shortcut">⌘ C</span> 复制当前成品，<span class="shortcut">⌘ S</span> 保存到本机。</div></section>
+          </aside>
+        </div>
+      </main>
+    </div>
+  </div>
+  <input type="file" id="fileInput" accept="image/png,image/jpeg,image/webp,image/gif" hidden>
+  <div class="capture-note" id="captureNote">正在打开屏幕选择器… 选择一个窗口或整个屏幕</div>
+  <div class="toast" id="toast" role="status"></div>
+  <script>
+    (() => {
+      const $ = (id) => document.getElementById(id);
+      const canvas = $('canvas');
+      const ctx = canvas.getContext('2d');
+      const state = { image: null, annotations: [], history: [], historyIndex: -1, tool: 'select', color: '#d95d3f', zoom: 'fit', selection: null, drawing: false, current: null, autoCopy: true };
+      const toolNames = { select: '选择区域', pen: '画笔', rect: '矩形标记', arrow: '箭头', text: '文字', blur: '局部模糊' };
+      let toastTimer;
+
+      function toast(message) {
+        const el = $('toast'); el.textContent = message; el.classList.add('show'); clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
+      }
+      function deepCopy(value) { return JSON.parse(JSON.stringify(value)); }
+      function hasImage() { return Boolean(state.image); }
+      function updateButtons() {
+        const enabled = hasImage();
+        $('copyButton').disabled = !enabled; $('downloadButton').disabled = !enabled;
+        $('undoButton').disabled = state.historyIndex <= 0; $('redoButton').disabled = state.historyIndex >= state.history.length - 1;
+        $('emptyState').style.display = enabled ? 'none' : 'block'; canvas.style.display = enabled ? 'block' : 'none';
+      }
+      function saveAnnotationHistory() {
+        state.history = state.history.slice(0, state.historyIndex + 1);
+        state.history.push(deepCopy(state.annotations)); state.historyIndex += 1;
+        updateButtons();
+      }
+      function restoreHistory(index) {
+        if (index < 0 || index >= state.history.length) return;
+        state.historyIndex = index; state.annotations = deepCopy(state.history[index]); render(); updateButtons();
+      }
+      function getFitScale() {
+        if (!state.image) return 1;
+        const area = $('stageArea');
+        const maxW = Math.max(120, area.clientWidth - 60), maxH = Math.max(120, area.clientHeight - 60);
+        return Math.min(maxW / state.image.width, maxH / state.image.height, 1);
+      }
+      function render() {
+        if (!state.image) { updateButtons(); return; }
+        canvas.width = state.image.width; canvas.height = state.image.height;
+        ctx.clearRect(0, 0, canvas.width, canvas.height); ctx.drawImage(state.image, 0, 0);
+        state.annotations.forEach(drawAnnotation);
+        if (state.current && state.current.type !== 'selection') drawAnnotation(state.current);
+        if (state.current && state.current.type === 'selection') drawSelection(state.current);
+        if (state.selection) drawSelection(state.selection);
+        const scale = state.zoom === 'fit' ? getFitScale() : state.zoom;
+        canvas.style.width = Math.max(1, Math.round(canvas.width * scale)) + 'px'; canvas.style.height = Math.max(1, Math.round(canvas.height * scale)) + 'px';
+        $('zoomValue').textContent = state.zoom === 'fit' ? '适应' : Math.round(state.zoom * 100) + '%';
+        $('imageInfo').textContent = `${state.image.width} × ${state.image.height} px`;
+        updateButtons(); positionSelectionActions();
+      }
+      function drawAnnotation(annotation) {
+        ctx.save(); ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.strokeStyle = annotation.color || state.color; ctx.fillStyle = annotation.color || state.color;
+        const w = annotation.width || Math.max(5, canvas.width / 160); ctx.lineWidth = w;
+        if (annotation.type === 'pen') { ctx.beginPath(); annotation.points.forEach((p, i) => i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)); ctx.stroke(); }
+        if (annotation.type === 'rect') { ctx.strokeRect(annotation.x, annotation.y, annotation.w, annotation.h); }
+        if (annotation.type === 'arrow') { drawArrow(annotation.x, annotation.y, annotation.x2, annotation.y2, w); }
+        if (annotation.type === 'text') { ctx.font = `600 ${annotation.size || Math.max(22, canvas.width / 42)}px ${getComputedStyle(document.body).fontFamily}`; ctx.fillText(annotation.text, annotation.x, annotation.y); }
+        if (annotation.type === 'blur') { ctx.save(); ctx.beginPath(); ctx.rect(annotation.x, annotation.y, annotation.w, annotation.h); ctx.clip(); ctx.filter = `blur(${Math.max(8, canvas.width / 90)}px)`; ctx.drawImage(state.image, 0, 0); ctx.restore(); ctx.strokeStyle = 'rgba(255,255,255,.32)'; ctx.lineWidth = 1; ctx.strokeRect(annotation.x, annotation.y, annotation.w, annotation.h); }
+        ctx.restore();
+      }
+      function drawArrow(x, y, x2, y2, width) { const angle = Math.atan2(y2 - y, x2 - x), head = Math.max(15, width * 3.5); ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x2, y2); ctx.stroke(); ctx.beginPath(); ctx.moveTo(x2, y2); ctx.lineTo(x2 - head * Math.cos(angle - Math.PI / 6), y2 - head * Math.sin(angle - Math.PI / 6)); ctx.moveTo(x2, y2); ctx.lineTo(x2 - head * Math.cos(angle + Math.PI / 6), y2 - head * Math.sin(angle + Math.PI / 6)); ctx.stroke(); }
+      function drawSelection(s) { ctx.save(); ctx.setLineDash([8, 5]); ctx.lineWidth = Math.max(2, canvas.width / 500); ctx.strokeStyle = '#fff'; ctx.strokeRect(s.x, s.y, s.w, s.h); ctx.setLineDash([8, 5]); ctx.strokeStyle = state.color; ctx.strokeRect(s.x, s.y, s.w, s.h); ctx.restore(); }
+      function getPoint(event) { const rect = canvas.getBoundingClientRect(); return { x: Math.max(0, Math.min(canvas.width, (event.clientX - rect.left) * canvas.width / rect.width)), y: Math.max(0, Math.min(canvas.height, (event.clientY - rect.top) * canvas.height / rect.height)) }; }
+      function normalizeRect(a, b) { return { x: Math.min(a.x, b.x), y: Math.min(a.y, b.y), w: Math.abs(b.x - a.x), h: Math.abs(b.y - a.y) }; }
+      function positionSelectionActions() {
+        const actions = $('selectionActions'); if (!state.selection || !hasImage()) { actions.classList.remove('show'); return; }
+        const stage = $('stageArea'), canvasRect = canvas.getBoundingClientRect(), stageRect = stage.getBoundingClientRect(); const scale = state.zoom === 'fit' ? getFitScale() : state.zoom;
+        const left = canvasRect.left - stageRect.left + state.selection.x * scale, top = canvasRect.top - stageRect.top + (state.selection.y + state.selection.h) * scale + 9;
+        actions.classList.add('show'); const maxLeft = Math.max(7, stage.clientWidth - actions.offsetWidth - 7), maxTop = Math.max(7, stage.clientHeight - actions.offsetHeight - 7);
+        actions.style.left = Math.min(Math.max(7, left), maxLeft) + 'px'; actions.style.top = Math.min(Math.max(7, top), maxTop) + 'px';
+      }
+      function setImage(source, name = '截图', afterLoad) {
+        const img = new Image(); img.onload = () => { state.image = img; state.annotations = []; state.history = []; state.historyIndex = -1; state.selection = null; state.zoom = 'fit'; saveAnnotationHistory(); render(); $('imageInfo').textContent = `${img.width} × ${img.height} px`; toast(`已载入 ${name}`); if (state.autoCopy) copyImage(false).then(ok => { if (!ok && state.autoCopy) toast('自动复制未完成，请手动点击“复制图片”'); }); if (afterLoad) afterLoad(); }; img.src = source;
+      }
+      async function withCleanCanvas(callback) { const current = state.current, selection = state.selection; state.current = null; state.selection = null; render(); try { return await callback(); } finally { state.current = current; state.selection = selection; render(); } }
+      function canvasDataUrl() { const output = document.createElement('canvas'); output.width = canvas.width; output.height = canvas.height; const out = output.getContext('2d'); out.drawImage(canvas, 0, 0); return output.toDataURL('image/png'); }
+      function readRecent() { try { const list = JSON.parse(localStorage.getItem('capture-desk-recent') || '[]'); if (!Array.isArray(list)) return []; return list.filter(item => item && typeof item === 'object' && typeof item.name === 'string' && typeof item.time === 'string' && typeof item.image === 'string' && /^data:image\/[a-z0-9.+-]+(?:;[^,]*)?,/i.test(item.image)).slice(0, 4); } catch (e) { return []; } }
+      function addRecent(name = '未命名截图') { if (!hasImage()) return; const list = readRecent(); list.unshift({ name, time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }), image: canvasDataUrl() }); try { localStorage.setItem('capture-desk-recent', JSON.stringify(list.slice(0, 4))); renderRecents(); } catch (e) { toast('最近截图较大，无法保存到浏览器记录'); } }
+      function renderRecents() { const list = readRecent(); $('recentCount').textContent = `${list.length} / 4`; const wrap = $('recentList'); wrap.replaceChildren(); if (!list.length) { const empty = document.createElement('div'); empty.className = 'recent-empty'; empty.textContent = '完成第一次截图后，缩略图会出现在这里。'; wrap.appendChild(empty); return; } list.forEach((item, i) => { const row = document.createElement('div'); row.className = 'recent-item'; row.dataset.recent = i; row.title = `打开 ${item.name}`; const image = document.createElement('img'); image.className = 'recent-thumb'; image.src = item.image; image.alt = item.name; const meta = document.createElement('div'); const name = document.createElement('div'); name.className = 'recent-name'; name.textContent = item.name; const time = document.createElement('div'); time.className = 'recent-time'; time.textContent = item.time; meta.append(name, time); const arrow = document.createElement('span'); arrow.className = 'recent-arrow'; arrow.textContent = '›'; row.append(image, meta, arrow); row.addEventListener('click', () => setImage(item.image, item.name)); wrap.appendChild(row); }); }
+      async function startCapture() {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) { toast('当前环境不支持屏幕捕获，请使用本机浏览器打开'); return; }
+        $('captureNote').classList.add('show');
+        try { const stream = await navigator.mediaDevices.getDisplayMedia({ video: { cursor: 'always' }, audio: false }); const video = document.createElement('video'); video.srcObject = stream; await video.play(); await new Promise(r => setTimeout(r, 180)); const shot = document.createElement('canvas'); shot.width = video.videoWidth; shot.height = video.videoHeight; shot.getContext('2d').drawImage(video, 0, 0); stream.getTracks().forEach(track => track.stop()); setImage(shot.toDataURL('image/png'), '屏幕截图', () => addRecent('屏幕截图')); } catch (error) { if (error.name !== 'AbortError' && error.name !== 'NotAllowedError') toast('没有拿到屏幕画面，请重试'); } finally { $('captureNote').classList.remove('show'); }
+      }
+      function importImage(file) { if (!file || !file.type.startsWith('image/')) { toast('请选择 PNG、JPG 或 WebP 图片'); return; } const reader = new FileReader(); reader.onload = () => { const name = file.name || '导入图片'; setImage(reader.result, name, () => addRecent(name)); }; reader.readAsDataURL(file); }
+      async function pasteImage() { try { if (navigator.clipboard && navigator.clipboard.read) { const items = await Promise.race([navigator.clipboard.read(), new Promise((_, reject) => setTimeout(() => reject(new Error('clipboard-timeout')), 3000))]); for (const item of items) { const type = item.types.find(t => t.startsWith('image/')); if (type) { importImage(new File([await (await item.getType(type)).arrayBuffer()], '剪贴板图片.png', { type })); return; } } } toast('剪贴板里没有图片'); } catch (e) { toast('浏览器未允许读取剪贴板，请使用 ⌘V 粘贴'); } }
+      async function copyImage(showToast = true) { if (!hasImage()) return false; try { await withCleanCanvas(async () => { const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png')); if (!blob) throw new Error('无法生成 PNG'); await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]); }); if (showToast) toast('图片已复制到剪贴板'); return true; } catch (e) { if (showToast) toast('复制失败，请检查剪贴板权限'); return false; } }
+      async function downloadImage() { if (!hasImage()) return; try { const dataUrl = await withCleanCanvas(() => canvasDataUrl()); const a = document.createElement('a'); a.href = dataUrl; a.download = `截一隅-${new Date().toISOString().slice(0, 10)}.png`; a.click(); addRecent('保存的截图'); toast('PNG 已保存到下载文件夹'); } catch (e) { toast('保存失败，请重试'); } }
+      function loadDemo() { const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900"><rect width="1440" height="900" fill="#f7f5f0"/><rect x="66" y="58" width="1308" height="784" rx="18" fill="#fff" stroke="#dedbd3"/><rect x="66" y="58" width="1308" height="62" rx="18" fill="#292a27"/><circle cx="98" cy="89" r="7" fill="#d95d3f"/><circle cx="122" cy="89" r="7" fill="#e0a238"/><circle cx="146" cy="89" r="7" fill="#6d9d77"/><rect x="222" y="78" width="500" height="22" rx="11" fill="#41423c"/><rect x="118" y="171" width="728" height="28" rx="14" fill="#292a27"/><rect x="118" y="223" width="512" height="14" rx="7" fill="#d7d3cb"/><rect x="118" y="275" width="210" height="210" rx="14" fill="#f6ddd4"/><rect x="354" y="275" width="210" height="210" rx="14" fill="#e9eee9"/><rect x="590" y="275" width="256" height="210" rx="14" fill="#f0ede7"/><rect x="900" y="171" width="340" height="420" rx="14" fill="#f5f3ef"/><rect x="934" y="210" width="210" height="15" rx="7" fill="#292a27"/><rect x="934" y="251" width="240" height="9" rx="4" fill="#d7d3cb"/><rect x="934" y="282" width="190" height="9" rx="4" fill="#d7d3cb"/><path d="M118 577h760" stroke="#dedbd3"/><rect x="118" y="630" width="440" height="15" rx="7" fill="#292a27"/><rect x="118" y="668" width="620" height="10" rx="5" fill="#d7d3cb"/><rect x="118" y="696" width="550" height="10" rx="5" fill="#d7d3cb"/></svg>`; setImage('data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg), '示例画面'); }
+      function setTool(tool) { state.tool = tool; document.querySelectorAll('[data-tool]').forEach(b => b.classList.toggle('active', b.dataset.tool === tool)); $('toolName').textContent = toolNames[tool]; canvas.style.cursor = tool === 'select' ? 'default' : 'crosshair'; }
+      function onPointerDown(e) { if (!hasImage() || state.tool === 'text') return; const p = getPoint(e); state.drawing = true; state.start = p; if (state.tool === 'pen') state.current = { type: 'pen', points: [p], color: state.color, width: Math.max(5, canvas.width / 160) }; else if (state.tool === 'select' || state.tool === 'rect' || state.tool === 'blur') state.current = { ...(normalizeRect(p, p)), type: state.tool === 'select' ? 'selection' : state.tool, color: state.color, width: Math.max(5, canvas.width / 160) }; else if (state.tool === 'arrow') state.current = { type: 'arrow', x: p.x, y: p.y, x2: p.x, y2: p.y, color: state.color, width: Math.max(5, canvas.width / 160) }; }
+      function onPointerMove(e) { if (!state.drawing) return; const p = getPoint(e); if (state.tool === 'pen') state.current.points.push(p); else if (state.tool === 'arrow') { state.current.x2 = p.x; state.current.y2 = p.y; } else state.current = { ...state.current, ...normalizeRect(state.start, p) }; render(); }
+      function onPointerUp() { if (!state.drawing) return; state.drawing = false; const item = state.current; state.current = null; if (state.tool === 'select') { state.selection = item.w > 4 && item.h > 4 ? item : null; render(); return; } if (state.tool === 'pen' && item.points.length < 2) return; if ((state.tool === 'rect' || state.tool === 'blur') && (item.w < 4 || item.h < 4)) return; if (state.tool === 'arrow' && Math.hypot(item.x2 - item.x, item.y2 - item.y) < 4) return; state.annotations.push(item); saveAnnotationHistory(); render(); }
+      function onCanvasClick(e) { if (!hasImage() || state.tool !== 'text') return; const p = getPoint(e); const text = window.prompt('输入要添加的文字'); if (text) { state.annotations.push({ type: 'text', text: text.slice(0, 80), x: p.x, y: p.y, color: state.color, size: Math.max(22, canvas.width / 42) }); saveAnnotationHistory(); render(); } }
+      $('captureButton').addEventListener('click', startCapture); $('emptyCapture').addEventListener('click', startCapture); $('importButton').addEventListener('click', () => $('fileInput').click()); $('fileInput').addEventListener('change', e => { importImage(e.target.files[0]); e.target.value = ''; }); $('pasteButton').addEventListener('click', pasteImage); $('copyButton').addEventListener('click', () => copyImage(true)); $('downloadButton').addEventListener('click', downloadImage); $('demoButton').addEventListener('click', loadDemo);
+      $('undoButton').addEventListener('click', () => restoreHistory(state.historyIndex - 1)); $('redoButton').addEventListener('click', () => restoreHistory(state.historyIndex + 1));
+      document.querySelectorAll('[data-tool]').forEach(button => button.addEventListener('click', () => setTool(button.dataset.tool)));
+      canvas.addEventListener('pointerdown', onPointerDown); canvas.addEventListener('pointermove', onPointerMove); window.addEventListener('pointerup', onPointerUp); canvas.addEventListener('click', onCanvasClick);
+      $('cropButton').addEventListener('click', () => { if (!state.selection || !hasImage()) return; const s = state.selection; withCleanCanvas(() => { const crop = document.createElement('canvas'); crop.width = Math.max(1, Math.round(s.w)); crop.height = Math.max(1, Math.round(s.h)); crop.getContext('2d').drawImage(canvas, s.x, s.y, s.w, s.h, 0, 0, crop.width, crop.height); setImage(crop.toDataURL('image/png'), '裁剪结果'); }); }); $('clearSelection').addEventListener('click', () => { state.selection = null; render(); });
+      $('zoomOut').addEventListener('click', () => { const current = state.zoom === 'fit' ? getFitScale() : state.zoom; state.zoom = Math.max(.25, current - .1); render(); }); $('zoomIn').addEventListener('click', () => { const current = state.zoom === 'fit' ? getFitScale() : state.zoom; state.zoom = Math.min(2.5, current + .1); render(); }); $('zoomFit').addEventListener('click', () => { state.zoom = 'fit'; render(); });
+      $('themeToggle').addEventListener('click', () => { const app = $('app'); const dark = app.dataset.theme === 'dark'; app.dataset.theme = dark ? 'light' : 'dark'; localStorage.setItem('capture-desk-theme', dark ? 'light' : 'dark'); }); $('helpButton').addEventListener('click', () => toast('⌘⇧X 截图 · ⌘C 复制 · ⌘S 保存 · Esc 取消选区'));
+      $('autoCopyToggle').addEventListener('click', e => { state.autoCopy = !state.autoCopy; e.currentTarget.classList.toggle('on', state.autoCopy); toast(state.autoCopy ? '截图后会自动复制' : '已关闭自动复制'); }); $('clearHistory').addEventListener('click', () => { localStorage.removeItem('capture-desk-recent'); renderRecents(); toast('最近截图记录已清空'); });
+      document.querySelectorAll('.swatch').forEach(button => button.addEventListener('click', () => { state.color = button.dataset.color; document.querySelectorAll('.swatch').forEach(b => b.classList.toggle('active', b === button)); }));
+      window.addEventListener('paste', e => { const file = [...(e.clipboardData?.files || [])].find(f => f.type.startsWith('image/')); if (file) { e.preventDefault(); importImage(file); } });
+      $('stageArea').addEventListener('dragover', e => { e.preventDefault(); $('stageArea').classList.add('dragging'); }); $('stageArea').addEventListener('dragleave', e => { if (e.target === $('stageArea')) $('stageArea').classList.remove('dragging'); }); $('stageArea').addEventListener('drop', e => { e.preventDefault(); $('stageArea').classList.remove('dragging'); const file = [...(e.dataTransfer?.files || [])].find(f => f.type.startsWith('image/')); if (file) importImage(file); else toast('请拖入一张图片'); });
+      window.addEventListener('resize', () => { if (state.zoom === 'fit') render(); });
+      function handleShortcut(e) { const mod = e.metaKey || e.ctrlKey; const key = (e.key || '').toLowerCase(); const code = (e.code || '').toLowerCase(); const isKey = value => key === value || code === `key${value}`; const active = document.activeElement; const typing = active && ((active.matches && active.matches('input, textarea, select')) || active.isContentEditable || (active.closest && active.closest('[contenteditable]'))); if (mod && e.shiftKey && isKey('x')) { e.preventDefault(); e.stopPropagation(); startCapture(); } else if (mod && isKey('s')) { e.preventDefault(); e.stopPropagation(); downloadImage(); } else if (mod && isKey('c') && hasImage() && !typing) { e.preventDefault(); e.stopPropagation(); copyImage(true); } else if (key === 'escape' || code === 'escape') { state.selection = null; state.current = null; render(); } }
+      document.addEventListener('keydown', handleShortcut);
+      const savedTheme = localStorage.getItem('capture-desk-theme'); if (savedTheme === 'dark') $('app').dataset.theme = 'dark'; renderRecents(); updateButtons();
+    })();
+  </script>
+</body>
+</html>
